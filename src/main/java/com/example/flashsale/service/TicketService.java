@@ -8,13 +8,18 @@ import com.example.flashsale.exception.ResourceNotFoundException;
 import com.example.flashsale.repository.OrderRepository;
 import com.example.flashsale.repository.TicketRepository;
 import com.example.flashsale.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class TicketService {
+
+    private static final Logger log = LoggerFactory.getLogger(TicketService.class);
 
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
@@ -50,7 +55,22 @@ public class TicketService {
 
         BigDecimal totalAmount = ticket.getPrice().multiply(BigDecimal.valueOf(quantity));
         Order order = new Order(user, ticket, quantity, totalAmount, "CONFIRMED");
+        Order savedOrder = orderRepository.save(order);
 
-        return orderRepository.save(order);
+        sendBookingNotification(savedOrder.getId(), user.getEmail(), ticket.getEventName());
+
+        return savedOrder;
+    }
+
+    private void sendBookingNotification(Long orderId, String email, String eventName) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            log.info("Mock notification sent: order {} confirmed for {} at {}",
+                    orderId, email, eventName);
+        });
     }
 }
