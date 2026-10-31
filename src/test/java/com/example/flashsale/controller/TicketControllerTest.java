@@ -14,17 +14,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(properties = {
-        "spring.datasource.url=jdbc:h2:mem:flashsale;DB_CLOSE_DELAY=-1;MODE=PostgreSQL",
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.datasource.username=sa",
-        "spring.datasource.password=",
-        "spring.jpa.hibernate.ddl-auto=create-drop"
-})
+@SpringBootTest
 @AutoConfigureMockMvc
 class TicketControllerTest {
 
@@ -48,6 +43,7 @@ class TicketControllerTest {
                 """.formatted(ticket.getId(), user.getId());
 
         mockMvc.perform(post("/api/v1/tickets/book")
+                        .with(httpBasic("admin", "admin123"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -73,6 +69,7 @@ class TicketControllerTest {
                 """.formatted(ticket.getId(), user.getId());
 
         mockMvc.perform(post("/api/v1/tickets/book")
+                        .with(httpBasic("admin", "admin123"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isConflict())
@@ -92,6 +89,7 @@ class TicketControllerTest {
                 """.formatted(user.getId());
 
         mockMvc.perform(post("/api/v1/tickets/book")
+                        .with(httpBasic("admin", "admin123"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isNotFound())
@@ -109,10 +107,23 @@ class TicketControllerTest {
                 """.formatted(ticket.getId(), user.getId());
 
         mockMvc.perform(post("/api/v1/tickets/book")
+                        .with(httpBasic("admin", "admin123"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("quantity must be greater than zero"));
+    }
+
+    @Test
+    void bookingWithoutAuthenticationReturnsUnauthorized() throws Exception {
+        String body = """
+                {"ticketId": 1, "userId": 1, "quantity": 1}
+                """;
+
+        mockMvc.perform(post("/api/v1/tickets/book")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isUnauthorized());
     }
 }

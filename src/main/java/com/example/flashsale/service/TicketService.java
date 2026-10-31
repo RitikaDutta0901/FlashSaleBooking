@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -31,6 +32,26 @@ public class TicketService {
         this.ticketRepository = ticketRepository;
         this.userRepository = userRepository;
         this.orderRepository = orderRepository;
+    }
+
+    @Transactional
+    public Ticket createTicket(String eventName, BigDecimal price, int availableStock) {
+        if (availableStock < 0) {
+            throw new IllegalArgumentException("availableStock cannot be negative");
+        }
+
+        return ticketRepository.save(new Ticket(eventName, price, availableStock));
+    }
+
+    @Transactional(readOnly = true)
+    public Ticket getTicket(Long id) {
+        return ticketRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found with id: " + id));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Ticket> listTickets() {
+        return ticketRepository.findAll();
     }
 
     @Transactional

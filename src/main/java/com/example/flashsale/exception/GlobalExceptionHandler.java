@@ -4,6 +4,7 @@ import com.example.flashsale.dto.ApiError;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -27,6 +28,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleNotFound(ResourceNotFoundException ex,
                                                    HttpServletRequest request) {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler({ConflictException.class, DataIntegrityViolationException.class})
+    public ResponseEntity<ApiError> handleConflict(Exception ex,
+                                                   HttpServletRequest request) {
+        String message = ex instanceof ConflictException
+                ? ex.getMessage()
+                : "The request conflicts with existing data";
+
+        return buildResponse(HttpStatus.CONFLICT, message, request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
