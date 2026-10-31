@@ -1,5 +1,6 @@
 package com.example.flashsale.config;
 
+import com.example.flashsale.service.RateLimitService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockFilterChain;
@@ -13,7 +14,9 @@ class RateLimitFilterTest {
 
     @Test
     void blocksRequestsAfterLimitIsReached() throws Exception {
-        RateLimitFilter filter = new RateLimitFilter(2, new ObjectMapper().findAndRegisterModules());
+        RateLimitService rateLimitService = new RateLimitService(2, "memory", null);
+        RateLimitFilter filter = new RateLimitFilter(
+                rateLimitService, new ObjectMapper().findAndRegisterModules());
 
         assertEquals(200, execute(filter).getStatus());
         assertEquals(200, execute(filter).getStatus());
